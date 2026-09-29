@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>簡約羅盤</title>
+<meta name="description" content="手機羅盤：二十四山、後天八卦、房屋座向與財位">
+<meta name="theme-color" content="#F6F4EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16171A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  --bg: #F6F4EF;
+  --card: #FFFFFF;
+  --ink: #1D1E22;
+  --ink2: #6B6D74;
+  --line: #DCD8CF;
+  --line2: #EDEAE3;
+  --accent: #C8392B;
+  --gold: #B8860B;
+  --good: #2E8B57;
+  --warn: #C27C0E;
+  --bad: #C8392B;
+  --dial: #FFFFFF;
+  --dial2: #F2EFE8;
+  --wei: #C8392B;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171A;
+    --card: #1F2024;
+    --ink: #ECEBE7;
+    --ink2: #9A9CA3;
+    --line: #3A3B40;
+    --line2: #2A2B30;
+    --accent: #FF6B57;
+    --gold: #E6B84C;
+    --good: #5CC08A;
+    --warn: #E6A23C;
+    --bad: #FF6B57;
+    --dial: #1F2024;
+    --dial2: #26272C;
+    --wei: #FF6B57;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+main { max-width: 520px; margin: 0 auto; padding: 12px 16px calc(84px + env(safe-area-inset-bottom)); }
+.page { display: none; }
+.page.on { display: block; }
+h2 { font-size: 17px; margin: 22px 0 10px; }
+h2:first-child { margin-top: 6px; }
+p { line-height: 1.7; margin: 6px 0; }
+.muted { color: var(--ink2); font-size: 13px; }
+.card { background: var(--card); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow); border: 1px solid var(--line2); }
+
+/* ---------- 讀數 ---------- */
+.readout { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.deg { font-size: 44px; font-weight: 300; letter-spacing: -1px; font-variant-numeric: tabular-nums; line-height: 1; }
+.deg small { font-size: 20px; }
+.shan { text-align: right; }
+.shan b { font-size: 30px; font-weight: 700; }
+.shan span { display: block; color: var(--ink2); font-size: 13px; margin-top: 2px; }
+.zuoxiang { margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 20px; font-weight: 600; }
+.pill { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; border: 1px solid currentColor; }
+.pill.warn { color: var(--warn); }
+.pill.bad { color: var(--bad); }
+.pill.good { color: var(--good); }
+.pill.lock { color: var(--accent); }
+.status { margin-top: 10px; min-height: 20px; font-size: 13px; color: var(--warn); }
+
+/* ---------- 羅盤 ---------- */
+.dialwrap { position: relative; width: 100%; max-width: 420px; margin: 14px auto 6px; aspect-ratio: 1; }
+.dialwrap svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+#dial { will-change: transform; }
+.t-shan { font-size: 17px; font-weight: 600; fill: var(--ink); }
+.t-shan.wei { fill: var(--wei); }
+.t-shan.gan { fill: var(--ink2); font-weight: 500; }
+.t-deg { font-size: 10px; fill: var(--ink2); font-variant-numeric: tabular-nums; }
+.t-gua { font-size: 12px; fill: var(--ink); font-weight: 600; }
+.t-dir { font-size: 12px; fill: var(--ink2); }
+.t-dir.n { fill: var(--accent); font-weight: 700; }
+.t-star { font-size: 11px; font-weight: 700; }
+.fixed-line { stroke: var(--accent); stroke-width: 1.4; }
+.fixed-lbl { font-size: 13px; font-weight: 700; fill: var(--accent); }
+
+/* ---------- 按鈕 ---------- */
+.row { display: flex; gap: 10px; margin-top: 10px; }
+button { font: inherit; cursor: pointer; }
+.btn { flex: 1; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 14px; padding: 13px 10px; font-size: 16px; font-weight: 600; }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.primary.locked { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { opacity: .4; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.chip { border: 1px solid var(--line); background: transparent; color: var(--ink2); border-radius: 99px; padding: 6px 12px; font-size: 13px; }
+.chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* ---------- 分頁列 ---------- */
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line2); display: flex; justify-content: center; padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+nav.tabs button { flex: 1; max-width: 130px; background: none; border: 0; color: var(--ink2); padding: 10px 0 12px; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+nav.tabs button.on { color: var(--ink); font-weight: 700; }
+nav.tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- 飛星九宮 ---------- */
+.grid9 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.cell { border-radius: 12px; padding: 10px 6px; text-align: center; background: var(--dial2); border: 1.5px solid transparent; }
+.cell .d { font-size: 12px; color: var(--ink2); }
+.cell .s { font-size: 22px; font-weight: 700; margin: 2px 0; }
+.cell .m { font-size: 12px; line-height: 1.35; }
+.cell.s9 { border-color: var(--gold); } .cell.s9 .s { color: var(--gold); }
+.cell.s8 { border-color: var(--good); } .cell.s8 .s { color: var(--good); }
+.cell.s5 { border-color: var(--bad); } .cell.s5 .s { color: var(--bad); }
+.pointer { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.pointer svg { width: 64px; height: 64px; flex: none; }
+.pointer .txt b { font-size: 17px; }
+
+/* ---------- 明財位 ---------- */
+.room { width: 100%; max-width: 260px; display: block; margin: 8px auto; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.seg button { flex: 1; border: 0; background: transparent; color: var(--ink2); padding: 10px 0; font-size: 15px; }
+.seg button.on { background: var(--ink); color: var(--bg); font-weight: 700; }
+
+/* ---------- 紀錄 ---------- */
+.rec { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line2); }
+.rec:last-child { border-bottom: 0; }
+.rec .n { font-weight: 700; }
+.rec .v { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+.rec .big { font-size: 22px; font-weight: 300; font-variant-numeric: tabular-nums; min-width: 72px; }
+.rec button { margin-left: auto; background: none; border: 0; color: var(--ink2); font-size: 13px; padding: 8px; }
+
+/* ---------- 彈窗 ---------- */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.overlay.on { display: flex; }
+.sheet { background: var(--card); border-radius: 20px; padding: 22px 20px; width: 100%; max-width: 400px; }
+.sheet h3 { margin: 0 0 8px; font-size: 19px; }
+.sheet input { width: 100%; font: inherit; font-size: 16px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); margin-top: 10px; }
+#manual { display: none; margin-top: 10px; }
+#manual input { width: 100%; }
+ul.tips { padding-left: 20px; margin: 6px 0; }
+ul.tips li { line-height: 1.7; margin: 3px 0; }
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============ 羅盤 ============ -->
+<section class="page on" id="p-compass">
+  <div class="card">
+    <div class="readout">
+      <div class="deg" id="deg">—<small>°</small></div>
+      <div class="shan"><b id="shan">—</b><span id="shanSub">&nbsp;</span></div>
+    </div>
+    <div class="zuoxiang"><span id="zx">坐— 向—</span><span id="jian"></span><span id="lockPill"></span></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="dialwrap">
+    <svg viewBox="-205 -205 410 410" aria-label="羅盤">
+      <g id="dial"></g>
+      <g id="fixed"></g>
+    </svg>
+  </div>
+
+  <div class="chips">
+    <button class="chip" id="northBtn">磁北（傳統羅盤）</button>
+    <button class="chip" id="starBtn">顯示流年飛星</button>
+  </div>
+  <div id="manual" class="card">
+    <div class="muted">找不到方向感測器，目前是示範模式，拖曳下面的滑桿轉動羅盤。</div>
+    <input type="range" id="manualRange" min="0" max="359.9" step="0.1" value="0">
+  </div>
+  <div class="row">
+    <button class="btn primary" id="lockBtn">鎖定讀數</button>
+    <button class="btn" id="saveBtn" disabled>存紀錄</button>
+  </div>
+</section>
+
+<!-- ============ 財位 ============ -->
+<section class="page" id="p-wealth">
+  <h2 id="flyTitle">流年財位</h2>
+  <div class="card">
+    <div class="grid9" id="grid9"></div>
+    <p class="muted" style="margin-top:10px">上方是北。方位以「房子中心」為準：站在家中央，用羅盤找出下面的方向。</p>
+    <div class="pointer" id="ptr9"></div>
+    <div class="pointer" id="ptr8"></div>
+    <div class="row"><button class="btn" id="showOnDial">在羅盤上顯示飛星</button></div>
+  </div>
+
+  <h2>明財位（看大門位置）</h2>
+  <div class="card">
+    <p class="muted">站在大門口、<b>面向屋內</b>，大門開在客廳的哪一邊？</p>
+    <div class="seg" id="doorSeg">
+      <button data-v="L">左邊</button><button data-v="C" class="on">中間</button><button data-v="R">右邊</button>
+    </div>
+    <svg class="room" id="room" viewBox="0 0 260 220"></svg>
+    <p id="doorTxt"></p>
+    <ul class="tips muted">
+      <li>財位宜「亮、靜、整潔」，可以放盆栽、坐的地方或聚寶盆。</li>
+      <li>避開走道、廁所門、堆雜物，也不要被橫樑壓住。</li>
+    </ul>
+  </div>
+  <p class="muted">各派說法不同，這裡用的是最常見的「明財位」與「玄空飛星」流年財位，參考就好。</p>
+</section>
+
+<!-- ============ 紀錄 ============ -->
+<section class="page" id="p-records">
+  <h2>量測紀錄</h2>
+  <div class="card" id="recList"></div>
+  <p class="muted">紀錄只存在這支手機裡，不會上傳。建議同一個位置量 3 次，差不多才算數。</p>
+</section>
+
+<!-- ============ 說明 ============ -->
+<section class="page" id="p-help">
+  <h2>怎麼量房子座向</h2>
+  <div class="card">
+    <ul class="tips">
+      <li><b>向</b>＝房子面對的方向，通常以大門往外看為準；<b>坐</b>＝向的正對面。</li>
+      <li>站在大門內側、面朝門外，手機<b>放平</b>，手機<b>頂端指向門外</b>、跟門框垂直。</li>
+      <li>數字穩定後按「鎖定讀數」，再按「存紀錄」。</li>
+      <li>大門是鐵門的話，<b>離門 1～2 公尺</b>再量。</li>
+      <li>門內、門外、窗邊各量一次，結果差不多才算數。</li>
+    </ul>
+  </div>
+
+  <h2>讀數不準時</h2>
+  <div class="card">
+    <ul class="tips">
+      <li>拿著手機在空中畫幾次「8」字，讓手機重新校正。</li>
+      <li>遠離鐵器、喇叭、磁鐵、手機殼上的磁吸環、電器。</li>
+      <li>拿 Google Maps 的藍色箭頭對照，方向一致就沒問題。</li>
+    </ul>
+  </div>
+
+  <h2>名詞小抄</h2>
+  <div class="card">
+    <ul class="tips">
+      <li><b>二十四山</b>：一圈分 24 格、每格 15°。子＝北、午＝南、卯＝東、酉＝西。</li>
+      <li><b>兼向</b>：讀數離隔壁格很近（3° 以內），例如「午兼丁」。</li>
+      <li><b>交界</b>：剛好壓在兩格中間 1° 以內，風水上視為不吉，建議重測確認。</li>
+      <li><b>公寓大樓</b>：有人看大樓大門、有人看自家大門、有人看採光最好的陽台，三個都量下來比較。</li>
+      <li><b>磁北／正北</b>：傳統羅盤用磁北。台灣兩者差約 4.7°（北部約 5°、南部約 4.3°，NOAA 2026 資料）。</li>
+    </ul>
+  </div>
+  <p class="muted">手機磁力計本身約有 5° 誤差，自己玩玩、了解家裡方位很夠用；重大決定請找專業老師實地勘查。</p>
+</section>
+
+</main>
+
+<nav class="tabs">
+  <button data-p="compass" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>羅盤</button>
+  <button data-p="wealth"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>財位</button>
+  <button data-p="records"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>紀錄</button>
+  <button data-p="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg>說明</button>
+</nav>
+
+<!-- 啟動 -->
+<div class="overlay on" id="startOv">
+  <div class="sheet">
+    <h3>簡約羅盤</h3>
+    <p class="muted">把手機放平、遠離金屬，按下開始。使用時螢幕會保持常亮。</p>
+    <div class="row"><button class="btn primary" id="startBtn">開始使用</button></div>
+  </div>
+</div>
+
+<!-- 存紀錄 -->
+<div class="overlay" id="saveOv">
+  <div class="sheet">
+    <h3>存紀錄</h3>
+    <p class="muted" id="saveInfo"></p>
+    <div class="chips" id="nameChips" style="justify-content:flex-start">
+      <button class="chip">自家大門</button><button class="chip">陽台</button><button class="chip">大窗</button><button class="chip">大樓大門</button>
+    </div>
+    <input id="saveName" placeholder="名稱，例如：自家大門" maxlength="20">
+    <div class="row"><button class="btn" id="saveCancel">取消</button><button class="btn primary" id="saveOk">儲存</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ================= 基本資料 =================
+const SHAN = ['子','癸','丑','艮','寅','甲','卯','乙','辰','巽','巳','丙','午','丁','未','坤','申','庚','酉','辛','戌','乾','亥','壬'];
+const WEI = new Set(['乾','坤','艮','巽']);                     // 四維卦
+const ZHI = new Set('子丑寅卯辰巳午未申酉戌亥'.split(''));        // 地支
+// 後天八卦：從北開始順時針，bits 由內（下爻）到外（上爻），1=陽
+const GUA = [
+  { n:'坎', d:'北',   b:[0,1,0] }, { n:'艮', d:'東北', b:[0,0,1] },
+  { n:'震', d:'東',   b:[1,0,0] }, { n:'巽', d:'東南', b:[0,1,1] },
+  { n:'離', d:'南',   b:[1,0,1] }, { n:'坤', d:'西南', b:[0,0,0] },
+  { n:'兌', d:'西',   b:[1,1,0] }, { n:'乾', d:'西北', b:[1,1,1] },
+];
+const DECL = -4.7;   // 台灣磁偏角（西偏），NOAA WMM 2026：台北 -5.1、台中 -4.7、高雄 -4.3
+
+const STARS = {
+  1: { n:'一白', m:'人緣桃花' }, 2: { n:'二黑', m:'病符・顧健康' },
+  3: { n:'三碧', m:'是非口舌' }, 4: { n:'四綠', m:'文昌・考試' },
+  5: { n:'五黃', m:'災煞・勿動土' }, 6: { n:'六白', m:'貴人・偏財' },
+  7: { n:'七赤', m:'破財・防盜' }, 8: { n:'八白', m:'偏財' },
+  9: { n:'九紫', m:'正財・喜慶' },
+};
+const DIR_DEG = { '北':0, '東北':45, '東':90, '東南':135, '南':180, '西南':225, '西':270, '西北':315 };
+
+const norm = a => ((a % 360) + 360) % 360;
+const rad = d => d * Math.PI / 180;
+const P = (r, a) => [r * Math.sin(rad(a)), -r * Math.cos(rad(a))];
+const $ = id => document.getElementById(id);
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function arcPath(r1, r2, a1, a2) {
+  const [x1, y1] = P(r2, a1), [x2, y2] = P(r2, a2), [x3, y3] = P(r1, a2), [x4, y4] = P(r1, a1);
+  const big = (a2 - a1) > 180 ? 1 : 0;
+  return `M${x1} ${y1}A${r2} ${r2} 0 ${big} 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 ${big} 0 ${x4} ${y4}Z`;
+}
+
+// ================= 流年飛星 =================
+function flyingYear(d = new Date()) {
+  let y = d.getFullYear();
+  if (d < new Date(y, 1, 4)) y--;                 // 立春（約 2/4）前算上一年
+  let c = ((1 - (y - 2026)) % 9 + 9) % 9; if (c === 0) c = 9;   // 2026 一白入中，逐年倒退
+  const order = ['中','西北','西','東北','南','北','西南','東','東南'];
+  const map = {};
+  order.forEach((p, i) => map[p] = ((c - 1 + i) % 9) + 1);
+  const gz = '甲乙丙丁戊己庚辛壬癸'[(y - 4) % 10] + '子丑寅卯辰巳午未申酉戌亥'[(y - 4) % 12];
+  return { year: y, gz, map };
+}
+const FLY = flyingYear();
+
+// ================= 畫羅盤 =================
+const dial = $('dial');
+let starLayer;
+function drawDial() {
+  const g = dial;
+  g.innerHTML = '';
+  el('circle', { r: 198, fill: 'var(--dial)', stroke: 'var(--line)', 'stroke-width': 1 }, g);
+
+  // 度數刻度 198~176
+  for (let a = 0; a < 360; a++) {
+    const len = a % 10 === 0 ? 10 : a % 5 === 0 ? 7 : 4;
+    const [x1, y1] = P(197, a), [x2, y2] = P(197 - len, a);
+    el('line', { x1, y1, x2, y2, stroke: a === 0 ? 'var(--accent)' : 'var(--ink2)', 'stroke-width': a % 10 === 0 ? 1.2 : 0.6, opacity: a % 5 === 0 ? 1 : .6 }, g);
+  }
+  for (let a = 0; a < 360; a += 30) {
+    el('text', { class: 't-deg', transform: `rotate(${a}) translate(0,-179)`, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g, a);
+  }
+  el('circle', { r: 170, fill: 'none', stroke: 'var(--line)', 'stroke-width': 1 }, g);
+
+  // 二十四山 170~132
+  SHAN.forEach((s, i) => {
+    const a = i * 15;
+    const [x1, y1] = P(170, a - 7.5), [x2, y2] = P(132, a - 7.5);
+    el('line', { x1, y1, x2, y2, stroke: 'var(--line)', 'stroke-width': 1 }, g);
+    const cls = WEI.has(s) ? 't-shan wei' : ZHI.has(s) ? 't-shan' : 't-shan gan';
+    el('text', { class: cls, transform: `rotate(${a}) translate(0,-151)`, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g, s);
+  });
+  el('circle', { r: 132, fill: 'var(--dial2)', stroke: 'var(--line)', 'stroke-width': 1 }, g);
+
+  // 後天八卦 132~92：爻象（內側是下爻）+ 卦名
+  GUA.forEach((gu, i) => {
+    const a = i * 45;
+    const [x1, y1] = P(132, a - 22.5), [x2, y2] = P(92, a - 22.5);
+    el('line', { x1, y1, x2, y2, stroke: 'var(--line)', 'stroke-width': 1 }, g);
+    const grp = el('g', { transform: `rotate(${a})` }, g);
+    gu.b.forEach((yang, k) => {
+      const y = -(100 + k * 6);
+      if (yang) el('line', { x1: -10, y1: y, x2: 10, y2: y, stroke: 'var(--ink)', 'stroke-width': 3 }, grp);
+      else {
+        el('line', { x1: -10, y1: y, x2: -2.5, y2: y, stroke: 'var(--ink)', 'stroke-width': 3 }, grp);
+        el('line', { x1: 2.5, y1: y, x2: 10, y2: y, stroke: 'var(--ink)', 'stroke-width': 3 }, grp);
+      }
+    });
+    el('text', { class: 't-gua', transform: `translate(0,-${124})`, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, grp, gu.n);
+  });
+  el('circle', { r: 92, fill: 'var(--dial)', stroke: 'var(--line)', 'stroke-width': 1 }, g);
+
+  // 流年飛星層（92~66，預設隱藏）
+  starLayer = el('g', { visibility: 'hidden' }, g);
+  GUA.forEach((gu, i) => {
+    const a = i * 45, s = FLY.map[gu.d];
+    const col = s === 9 ? 'var(--gold)' : s === 8 ? 'var(--good)' : s === 5 ? 'var(--bad)' : null;
+    el('path', { d: arcPath(66, 92, a - 22.5, a + 22.5), fill: col || 'transparent', opacity: col ? .22 : 0 }, starLayer);
+    el('text', { class: 't-star', transform: `rotate(${a}) translate(0,-72)`, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: col || 'var(--ink2)' }, starLayer, STARS[s].n);
+  });
+
+  // 方位 92~66
+  GUA.forEach((gu, i) => {
+    const a = i * 45;
+    el('text', { class: gu.d === '北' ? 't-dir n' : 't-dir', transform: `rotate(${a}) translate(0,-83)`, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g, gu.d);
+  });
+  el('circle', { r: 64, fill: 'none', stroke: 'var(--line)', 'stroke-width': 1 }, g);
+
+  // 天池：指北針
+  el('circle', { r: 46, fill: 'var(--dial2)', stroke: 'var(--line)' }, g);
+  el('path', { d: 'M0 -42 L7 0 L-7 0 Z', fill: 'var(--accent)' }, g);
+  el('path', { d: 'M0 42 L7 0 L-7 0 Z', fill: 'var(--ink2)', opacity: .5 }, g);
+  el('circle', { r: 4, fill: 'var(--dial)', stroke: 'var(--ink2)' }, g);
+}
+function drawFixed() {
+  const g = $('fixed');
+  // 天心十道：固定在手機上的紅線，上＝向、下＝坐
+  el('line', { class: 'fixed-line', x1: 0, y1: -200, x2: 0, y2: 200 }, g);
+  el('line', { class: 'fixed-line', x1: -200, y1: 0, x2: 200, y2: 0, opacity: .35 }, g);
+  el('path', { d: 'M0 -196 L-8 -210 L8 -210 Z', fill: 'var(--accent)' }, g);
+  const lb = (t, y) => {
+    el('rect', { x: -12, y: y - 11, width: 24, height: 22, rx: 11, fill: 'var(--accent)' }, g);
+    el('text', { class: 'fixed-lbl', x: 0, y, 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'fill:#fff' }, g, t);
+  };
+  lb('向', -56); lb('坐', 56);
+}
+drawDial(); drawFixed();
+
+// ================= 感測器 =================
+let sx = 0, sy = 0, haveReading = false;        // 平滑後的方向向量（磁北）
+let rawHist = [];                              // 近 1 秒原始讀數，算晃動
+let tiltBad = false;
+let lastEvent = 0;
+let useTrue = false, locked = false, lockedHeading = 0;
+let shown = 0, shownInit = false;              // 畫面上正在顯示的角度（連續、不跳 360）
+
+function pushHeading(h) {
+  h = norm(h + (screen.orientation ? screen.orientation.angle || 0 : 0));
+  const k = haveReading ? 0.18 : 1;
+  sx += (Math.sin(rad(h)) - sx) * k;
+  sy += (Math.cos(rad(h)) - sy) * k;
+  haveReading = true;
+  lastEvent = performance.now();
+  rawHist.push({ t: lastEvent, h });
+  while (rawHist.length && lastEvent - rawHist[0].t > 1000) rawHist.shift();
+}
+function spread() {
+  if (rawHist.length < 5) return 0;
+  let c = 0, s = 0;
+  for (const r of rawHist) { c += Math.cos(rad(r.h)); s += Math.sin(rad(r.h)); }
+  const R = Math.min(1, Math.hypot(c, s) / rawHist.length);
+  return Math.sqrt(-2 * Math.log(Math.max(R, 1e-9))) * 180 / Math.PI;
+}
+function magHeading() { return norm(Math.atan2(sx, sy) * 180 / Math.PI); }
+
+function onAbs(e) {
+  if (e.alpha == null) return;
+  tiltBad = Math.abs(e.beta || 0) > 25 || Math.abs(e.gamma || 0) > 25;
+  pushHeading(360 - e.alpha);
+}
+function onIOS(e) {
+  if (e.webkitCompassHeading == null) return;
+  tiltBad = Math.abs(e.beta || 0) > 25 || Math.abs(e.gamma || 0) > 25;
+  pushHeading(e.webkitCompassHeading);
+}
+function onRel(e) {                               // 少數瀏覽器：deviceorientation 帶 absolute=true
+  if (e.absolute && e.alpha != null) onAbs(e);
+}
+
+let manualMode = false;
+async function start() {
+  $('startOv').classList.remove('on');
+  // 新版 Chrome 也有 requestPermission，不能拿它判斷是不是 iPhone；
+  // 有就先要授權，再依瀏覽器實際支援的事件來讀
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      await DeviceOrientationEvent.requestPermission();
+    }
+  } catch (err) { console.warn(err); }
+  if ('ondeviceorientationabsolute' in window) {
+    addEventListener('deviceorientationabsolute', onAbs);        // Android Chrome
+  } else {
+    addEventListener('deviceorientation', e => e.webkitCompassHeading != null ? onIOS(e) : onRel(e));  // iPhone / 其他
+  }
+  keepAwake();
+  setTimeout(() => { if (!haveReading) enableManual(); }, 2500);
+}
+function enableManual() {
+  manualMode = true;
+  $('manual').style.display = 'block';
+  const r = $('manualRange');
+  const f = () => { rawHist = []; haveReading = false; pushHeading(+r.value); };
+  r.addEventListener('input', f); f();
+}
+
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !$('startOv').classList.contains('on')) keepAwake(); });
+
+// ================= 讀數換算 =================
+function shanInfo(h) {
+  const pos = norm(h + 7.5);
+  const i = Math.floor(pos / 15) % 24;
+  const off = (pos % 15) - 7.5;                   // 離本格中心幾度（-7.5 ~ +7.5）
+  let kind = 'zheng', nb = null;
+  if (Math.abs(off) >= 6.5) kind = 'edge';
+  else if (Math.abs(off) > 4.5) kind = 'jian';
+  if (kind !== 'zheng') nb = (i + (off > 0 ? 1 : 23)) % 24;
+  return { i, off, kind, nb };
+}
+function currentHeading() {
+  if (locked) return lockedHeading;
+  const m = magHeading();
+  return useTrue ? norm(m + DECL) : m;
+}
+
+// ================= 畫面更新 =================
+function frame() {
+  requestAnimationFrame(frame);
+  if (!haveReading) return;
+  const h = currentHeading();
+  if (!shownInit) { shown = h; shownInit = true; }
+  const diff = ((h - shown + 540) % 360) - 180;
+  shown += diff * (Math.abs(diff) > 90 ? 1 : 0.35);
+  dial.setAttribute('transform', `rotate(${-shown})`);
+  render(h);
+  renderPointers(h);
+}
+let lastTxt = '';
+function render(h) {
+  const face = shanInfo(h), sit = shanInfo(h + 180);
+  const gua = GUA[Math.floor(norm(h + 22.5) / 45) % 8];
+  const key = h.toFixed(1) + locked + tiltBad + useTrue + (performance.now() - lastEvent > 1500) + Math.round(spread());
+  if (key === lastTxt) return; lastTxt = key;
+
+  $('deg').innerHTML = h.toFixed(1) + '<small>°</small>';
+  $('shan').textContent = SHAN[face.i] + '山';
+  $('shanSub').textContent = `${gua.n}卦・${gua.d}方・${useTrue ? '正北' : '磁北'}`;
+  $('zx').textContent = `坐${SHAN[sit.i]}向${SHAN[face.i]}`;
+
+  const j = $('jian');
+  if (face.kind === 'jian') { j.className = 'pill warn'; j.textContent = `兼${SHAN[sit.nb]}${SHAN[face.nb]}`; }
+  else if (face.kind === 'edge') { j.className = 'pill bad'; j.textContent = `交界 ${SHAN[face.i]}/${SHAN[face.nb]}`; }
+  else { j.className = 'pill good'; j.textContent = '正向'; }
+  const lp = $('lockPill');
+  lp.className = locked ? 'pill lock' : ''; lp.textContent = locked ? '已鎖定' : '';
+
+  let st = '';
+  if (!locked && !manualMode) {
+    if (performance.now() - lastEvent > 1500) st = '沒有收到感測器資料…';
+    else if (tiltBad) st = '請把手機放平';
+    else if (spread() > 4) st = '讀數晃動中：拿穩一點，或在空中畫幾次「8」字校正';
+  }
+  if (!st && face.kind === 'edge') st = '剛好壓在兩座山交界，建議換個位置再量一次';
+  $('status').textContent = st;
+}
+
+// ================= 按鈕 =================
+$('startBtn').onclick = start;
+$('lockBtn').onclick = () => {
+  if (!haveReading) return;
+  if (!locked) { lockedHeading = currentHeading(); locked = true; if (navigator.vibrate) navigator.vibrate(30); }
+  else locked = false;
+  $('lockBtn').textContent = locked ? '解除鎖定' : '鎖定讀數';
+  $('lockBtn').classList.toggle('locked', locked);
+  $('saveBtn').disabled = !locked;
+  lastTxt = '';
+};
+$('northBtn').onclick = () => {
+  if (locked) return;
+  useTrue = !useTrue;
+  $('northBtn').textContent = useTrue ? '正北（地圖）' : '磁北（傳統羅盤）';
+  $('northBtn').classList.toggle('on', useTrue);
+  lastTxt = '';
+};
+function setStars(on) {
+  starLayer.setAttribute('visibility', on ? 'visible' : 'hidden');
+  $('starBtn').classList.toggle('on', on);
+}
+$('starBtn').onclick = () => setStars(starLayer.getAttribute('visibility') === 'hidden');
+$('showOnDial').onclick = () => { setStars(true); go('compass'); };
+
+// 分頁
+function go(p) {
+  document.querySelectorAll('.page').forEach(s => s.classList.toggle('on', s.id === 'p-' + p));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+  if (p === 'records') renderRecords();
+  scrollTo(0, 0);
+}
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => go(b.dataset.p));
+
+// ================= 紀錄 =================
+const KEY = 'luopan.records';
+function loadRecs() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
+function saveRecs(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {} }
+$('saveBtn').onclick = () => {
+  const h = lockedHeading, f = shanInfo(h), s = shanInfo(h + 180);
+  $('saveInfo').textContent = `${h.toFixed(1)}°（${useTrue ? '正北' : '磁北'}）坐${SHAN[s.i]}向${SHAN[f.i]}`;
+  $('saveName').value = '';
+  $('saveOv').classList.add('on');
+};
+document.querySelectorAll('#nameChips .chip').forEach(c => c.onclick = () => { $('saveName').value = c.textContent; });
+$('saveCancel').onclick = () => $('saveOv').classList.remove('on');
+$('saveOk').onclick = () => {
+  const h = lockedHeading, f = shanInfo(h), s = shanInfo(h + 180);
+  const recs = loadRecs();
+  recs.unshift({
+    name: $('saveName').value.trim() || '未命名',
+    deg: +h.toFixed(1), north: useTrue ? '正北' : '磁北',
+    zx: `坐${SHAN[s.i]}向${SHAN[f.i]}` + (f.kind === 'jian' ? `（兼${SHAN[s.nb]}${SHAN[f.nb]}）` : f.kind === 'edge' ? '（交界）' : ''),
+    t: Date.now(),
+  });
+  saveRecs(recs);
+  $('saveOv').classList.remove('on');
+  if (navigator.vibrate) navigator.vibrate(20);
+  $('saveBtn').textContent = '已儲存 ✓';
+  setTimeout(() => $('saveBtn').textContent = '存紀錄', 1500);
+};
+function renderRecords() {
+  const box = $('recList'), recs = loadRecs();
+  if (!recs.length) { box.innerHTML = '<p class="muted">還沒有紀錄。到羅盤頁「鎖定讀數」後按「存紀錄」。</p>'; return; }
+  box.innerHTML = '';
+  recs.forEach((r, i) => {
+    const d = new Date(r.t);
+    const row = document.createElement('div'); row.className = 'rec';
+    const big = document.createElement('div'); big.className = 'big'; big.textContent = r.deg.toFixed(1) + '°';
+    const mid = document.createElement('div');
+    const n = document.createElement('div'); n.className = 'n'; n.textContent = r.name;
+    const v = document.createElement('div'); v.className = 'v';
+    v.textContent = `${r.zx}・${r.north}・${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    mid.append(n, v);
+    const del = document.createElement('button'); del.textContent = '刪除';
+    del.onclick = () => { if (confirm(`刪除「${r.name}」？`)) { const a = loadRecs(); a.splice(i, 1); saveRecs(a); renderRecords(); } };
+    row.append(big, mid, del);
+    box.appendChild(row);
+  });
+}
+
+// ================= 財位頁 =================
+(function buildGrid() {
+  $('flyTitle').textContent = `${FLY.year} ${FLY.gz}年 流年財位`;
+  const layout = ['西北','北','東北','西','中','東','西南','南','東南'];
+  const g = $('grid9');
+  layout.forEach(p => {
+    const s = FLY.map[p];
+    const c = document.createElement('div');
+    c.className = 'cell s' + s;
+    c.innerHTML = `<div class="d">${p}</div><div class="s">${s}</div><div class="m">${STARS[s].n}<br>${STARS[s].m}</div>`;
+    g.appendChild(c);
+  });
+})();
+const byStar = n => Object.keys(FLY.map).find(p => FLY.map[p] === n && p !== '中');
+function pointerHTML(id, star, color) {
+  const p = byStar(star);
+  const box = $(id);
+  if (!p) { box.innerHTML = `<div class="txt muted">今年${STARS[star].n}入中宮（家中央）</div>`; return; }
+  box.innerHTML = `<svg viewBox="-32 -32 64 64"><circle r="30" fill="none" stroke="var(--line)"/><g class="arr"><path d="M0 -26 L8 -6 L2 -8 L2 18 L-2 18 L-2 -8 L-8 -6 Z" fill="${color}"/></g></svg>
+    <div class="txt"><b style="color:${color}">${STARS[star].m.split('・')[0]}在「${p}」</b><div class="muted" id="${id}-t">啟動羅盤後，箭頭會指向那個方向</div></div>`;
+}
+pointerHTML('ptr9', 9, 'var(--gold)');
+pointerHTML('ptr8', 8, 'var(--good)');
+function renderPointers(h) {
+  if (!$('p-wealth').classList.contains('on')) return;
+  [['ptr9', 9], ['ptr8', 8]].forEach(([id, st]) => {
+    const p = byStar(st); if (!p) return;
+    // 飛星方位以地理方位為準，箭頭用正北換算
+    const trueH = locked ? lockedHeading : useTrue ? currentHeading() : norm(magHeading() + DECL);
+    const rel = norm(DIR_DEG[p] - trueH);
+    const a = $(id).querySelector('.arr'); if (a) a.setAttribute('transform', `rotate(${rel})`);
+    const t = $(id + '-t');
+    if (t) t.textContent = rel < 20 || rel > 340 ? '就在你正前方' : rel < 180 ? `往右轉 ${Math.round(rel)}°` : `往左轉 ${Math.round(360 - rel)}°`;
+  });
+}
+
+// 明財位
+function drawRoom(v) {
+  const s = $('room'); s.innerHTML = '';
+  el('rect', { x: 20, y: 20, width: 220, height: 170, rx: 6, fill: 'var(--dial2)', stroke: 'var(--ink2)', 'stroke-width': 2 }, s);
+  const dx = v === 'L' ? 40 : v === 'R' ? 170 : 105;
+  el('rect', { x: dx, y: 184, width: 50, height: 12, fill: 'var(--accent)', rx: 2 }, s);
+  el('text', { x: dx + 25, y: 212, 'text-anchor': 'middle', 'font-size': 13, fill: 'var(--accent)', 'font-weight': 700 }, s, '大門');
+  const spots = v === 'L' ? [[210, 50]] : v === 'R' ? [[50, 50]] : [[50, 50], [210, 50]];
+  spots.forEach(([x, y]) => {
+    el('line', { x1: dx + 25, y1: 184, x2: x, y2: y, stroke: 'var(--gold)', 'stroke-dasharray': '4 4', 'stroke-width': 1.5 }, s);
+    el('circle', { cx: x, cy: y, r: 22, fill: 'var(--gold)', opacity: .25 }, s);
+    el('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 13, 'font-weight': 700, fill: 'var(--gold)' }, s, '財位');
+  });
+  el('text', { x: 130, y: 110, 'text-anchor': 'middle', 'font-size': 12, fill: 'var(--ink2)' }, s, '客廳（從門口往內看）');
+  $('doorTxt').textContent = v === 'L' ? '門開在左邊 → 財位在右邊的斜對角。' : v === 'R' ? '門開在右邊 → 財位在左邊的斜對角。' : '門開在中間 → 左右兩個斜對角都算財位。';
+}
+document.querySelectorAll('#doorSeg button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#doorSeg button').forEach(x => x.classList.toggle('on', x === b));
+  drawRoom(b.dataset.v);
+});
+drawRoom('C');
+
+requestAnimationFrame(frame);
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
