@@ -1,5 +1,5 @@
 // 離線用：同源檔案走 network-first（有網路拿最新版，離線才用快取）
-const CACHE = 'luopan-v1';
+const CACHE = 'luopan-v2';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

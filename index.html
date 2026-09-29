@@ -78,7 +78,12 @@ p { line-height: 1.7; margin: 6px 0; }
 .pill.bad { color: var(--bad); }
 .pill.good { color: var(--good); }
 .pill.lock { color: var(--accent); }
-.status { margin-top: 10px; min-height: 20px; font-size: 13px; color: var(--warn); }
+.status { margin-top: 2px; font-size: 13px; color: var(--warn); line-height: 1.5; }
+.levelrow { display: flex; align-items: center; gap: 12px; margin-top: 12px; min-height: 56px; }
+.level { width: 56px; height: 56px; flex: none; }
+#bubble { transition: fill .2s; }
+.lvtxt { font-size: 14px; font-weight: 600; color: var(--ink2); }
+.lvtxt.ok { color: var(--good); }
 
 /* ---------- 羅盤 ---------- */
 .dialwrap { position: relative; width: 100%; max-width: 420px; margin: 14px auto 6px; aspect-ratio: 1; }
@@ -162,7 +167,20 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
       <div class="shan"><b id="shan">—</b><span id="shanSub">&nbsp;</span></div>
     </div>
     <div class="zuoxiang"><span id="zx">坐— 向—</span><span id="jian"></span><span id="lockPill"></span></div>
-    <div class="status" id="status"></div>
+    <div class="levelrow">
+      <svg class="level" viewBox="-30 -30 60 60" aria-label="水平儀">
+        <circle r="28" fill="var(--dial2)" stroke="var(--line)"/>
+        <circle r="17" fill="none" stroke="var(--line)" stroke-dasharray="2 2"/>
+        <circle r="6.5" fill="none" id="lvRing" stroke="var(--ink2)" stroke-width="1.2"/>
+        <line x1="-28" y1="0" x2="28" y2="0" stroke="var(--line)" stroke-width=".6"/>
+        <line x1="0" y1="-28" x2="0" y2="28" stroke="var(--line)" stroke-width=".6"/>
+        <circle r="5.5" id="bubble" fill="var(--warn)" opacity=".85"/>
+      </svg>
+      <div>
+        <div class="lvtxt" id="lvTxt">水平儀：等待感測器</div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
   </div>
 
   <div class="dialwrap">
@@ -428,6 +446,14 @@ drawDial(); drawFixed();
 let sx = 0, sy = 0, haveReading = false;        // 平滑後的方向向量（磁北）
 let rawHist = [];                              // 近 1 秒原始讀數，算晃動
 let tiltBad = false;
+let tb = 0, tg = 0, haveTilt = false;          // 平滑後的前後傾(beta)、左右傾(gamma)
+function setTilt(e) {
+  if (e.beta == null || e.gamma == null) return;
+  const k = haveTilt ? 0.25 : 1;
+  tb += (e.beta - tb) * k; tg += (e.gamma - tg) * k;
+  haveTilt = true;
+  tiltBad = Math.abs(tb) > 10 || Math.abs(tg) > 10;
+}
 let lastEvent = 0;
 let useTrue = false, locked = false, lockedHeading = 0;
 let shown = 0, shownInit = false;              // 畫面上正在顯示的角度（連續、不跳 360）
@@ -453,12 +479,12 @@ function magHeading() { return norm(Math.atan2(sx, sy) * 180 / Math.PI); }
 
 function onAbs(e) {
   if (e.alpha == null) return;
-  tiltBad = Math.abs(e.beta || 0) > 25 || Math.abs(e.gamma || 0) > 25;
+  setTilt(e);
   pushHeading(360 - e.alpha);
 }
 function onIOS(e) {
   if (e.webkitCompassHeading == null) return;
-  tiltBad = Math.abs(e.beta || 0) > 25 || Math.abs(e.gamma || 0) > 25;
+  setTilt(e);
   pushHeading(e.webkitCompassHeading);
 }
 function onRel(e) {                               // 少數瀏覽器：deviceorientation 帶 absolute=true
@@ -485,6 +511,7 @@ async function start() {
 }
 function enableManual() {
   manualMode = true;
+  $('lvTxt').textContent = '示範模式沒有水平資料';
   $('manual').style.display = 'block';
   const r = $('manualRange');
   const f = () => { rawHist = []; haveReading = false; pushHeading(+r.value); };
@@ -515,6 +542,32 @@ function currentHeading() {
 }
 
 // ================= 畫面更新 =================
+// 水泡往「比較高的那一邊」跑：頂端抬高(beta>0)→往上，右邊壓低(gamma>0)→往左
+const LEVEL_OK = 2;                              // 2° 以內算水平
+let lastLv = '';
+function renderLevel() {
+  if (!haveTilt) return;
+  const k = 1.6;                                 // 每 1° 移動 1.6 單位（約 10° 碰到外圈）
+  let x = -tg * k, y = -tb * k;
+  const r = Math.hypot(x, y), max = 22;
+  if (r > max) { x *= max / r; y *= max / r; }
+  const b = $('bubble');
+  b.setAttribute('cx', x.toFixed(1)); b.setAttribute('cy', y.toFixed(1));
+  const ok = Math.abs(tb) <= LEVEL_OK && Math.abs(tg) <= LEVEL_OK;
+  let txt;
+  if (ok) txt = '已水平 ✓';
+  else {
+    const parts = [];
+    if (Math.abs(tb) > LEVEL_OK) parts.push(tb > 0 ? `頂端抬高 ${Math.round(Math.abs(tb))}°` : `頂端壓低 ${Math.round(Math.abs(tb))}°`);
+    if (Math.abs(tg) > LEVEL_OK) parts.push(tg > 0 ? `往右傾 ${Math.round(Math.abs(tg))}°` : `往左傾 ${Math.round(Math.abs(tg))}°`);
+    txt = parts.join('、');
+  }
+  if (txt === lastLv) return; lastLv = txt;
+  b.setAttribute('fill', ok ? 'var(--good)' : 'var(--warn)');
+  $('lvRing').setAttribute('stroke', ok ? 'var(--good)' : 'var(--ink2)');
+  $('lvTxt').textContent = txt;
+  $('lvTxt').classList.toggle('ok', ok);
+}
 function frame() {
   requestAnimationFrame(frame);
   if (!haveReading) return;
@@ -525,6 +578,7 @@ function frame() {
   dial.setAttribute('transform', `rotate(${-shown})`);
   render(h);
   renderPointers(h);
+  renderLevel();
 }
 let lastTxt = '';
 function render(h) {
@@ -548,7 +602,7 @@ function render(h) {
   let st = '';
   if (!locked && !manualMode) {
     if (performance.now() - lastEvent > 1500) st = '沒有收到感測器資料…';
-    else if (tiltBad) st = '請把手機放平';
+    else if (tiltBad) st = '傾斜太多，讀數會偏，請把手機放平';
     else if (spread() > 4) st = '讀數晃動中：拿穩一點，或在空中畫幾次「8」字校正';
   }
   if (!st && face.kind === 'edge') st = '剛好壓在兩座山交界，建議換個位置再量一次';
