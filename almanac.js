@@ -272,7 +272,31 @@ document.querySelectorAll('#almSeg button').forEach(b => b.onclick = () => showS
 let almInit = false;
 window.almanacShow = function () {
   if (!almInit) { almInit = true; renderPickForm(); }
+  rollToday();
   renderDay();
 };
+
+// App 放在背景跨過午夜：原本看的是「今天」就跟著換到新的今天；時辰換了就重畫紅框。
+// 使用者自己切到別天在看的，不去動它。
+let seenDay = ymd(today0()), seenHour = -1;
+const hourIdx = () => Math.floor((new Date().getHours() + 1) / 2) % 12;
+function rollToday() {
+  const now = ymd(today0());
+  if (now === seenDay) return false;
+  if (ymd(almDate) === seenDay) almDate = today0();
+  seenDay = now;
+  return true;
+}
+function checkClock() {
+  const dayChanged = rollToday();
+  const h = hourIdx(), hourChanged = h !== seenHour;
+  seenHour = h;
+  if (!dayChanged && !hourChanged) return;
+  // 羅盤上的吉神標記也要跟著新的一天，所以頁面沒顯示也照樣重算
+  if (dayChanged || sameDay(almDate, today0())) renderDay();
+}
+setInterval(checkClock, 30000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkClock(); });
+
 // 開 App 就先算好今天的吉神，羅盤頁的「吉神方位」開關才有東西
-try { renderDay(); } catch (e) { console.error(e); }
+try { renderDay(); seenHour = hourIdx(); } catch (e) { console.error(e); }
