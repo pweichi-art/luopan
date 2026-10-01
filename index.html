@@ -113,7 +113,7 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------- 分頁列 ---------- */
 nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line2); display: flex; justify-content: center; padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
-nav.tabs button { flex: 1; max-width: 130px; background: none; border: 0; color: var(--ink2); padding: 10px 0 12px; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+nav.tabs button { flex: 1; max-width: 110px; background: none; border: 0; color: var(--ink2); padding: 10px 0 12px; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 nav.tabs button.on { color: var(--ink); font-weight: 700; }
 nav.tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -153,6 +153,44 @@ nav.tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stro
 #manual { display: none; margin-top: 10px; }
 #manual input { width: 100%; }
 ul.tips { padding-left: 20px; margin: 6px 0; }
+/* ---------- 農民曆 ---------- */
+.datebar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.datebar .nav { width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 20px; flex: none; }
+.datebar input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); text-align: center; }
+.datebar .chip { flex: none; }
+.dayhead { display: flex; align-items: center; gap: 16px; }
+.dayhead .big { font-size: 56px; font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; min-width: 72px; text-align: center; }
+.dayhead .big small { display: block; font-size: 13px; color: var(--ink2); margin-top: 6px; }
+.dayhead .lun b { font-size: 24px; }
+.dayhead .lun div { color: var(--ink2); font-size: 13px; margin-top: 3px; line-height: 1.5; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.yj { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; margin-top: 12px; }
+.yj .k { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 17px; }
+.yj .k.yi { background: var(--good); } .yj .k.ji { background: var(--bad); }
+.terms { display: flex; flex-wrap: wrap; gap: 6px; }
+.term { border: 1px solid var(--line); background: var(--dial2); color: var(--ink); border-radius: 8px; padding: 5px 9px; font-size: 14px; }
+.kv { display: grid; grid-template-columns: 76px 1fr; gap: 8px 10px; font-size: 14px; line-height: 1.55; margin: 0; }
+.kv dt { color: var(--ink2); } .kv dd { margin: 0; }
+.shen3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.shen3 > div { text-align: center; border-radius: 12px; background: var(--dial2); padding: 10px 4px; }
+.shen3 svg { width: 46px; height: 46px; display: block; margin: 0 auto 4px; }
+.shen3 b { display: block; font-size: 15px; }
+.shen3 .livetxt { font-size: 11px; color: var(--ink2); min-height: 15px; }
+.hours { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.hour { border-radius: 10px; padding: 8px 2px; text-align: center; background: var(--dial2); border: 1.5px solid transparent; color: var(--ink); }
+.hour b { font-size: 16px; } .hour div { font-size: 11px; color: var(--ink2); }
+.hour.good b { color: var(--good); } .hour.bad b { color: var(--bad); }
+.hour.now { border-color: var(--accent); }
+.res { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line2); padding: 11px 2px; color: var(--ink); }
+.res:last-child { border-bottom: 0; }
+.res .d { font-size: 20px; font-variant-numeric: tabular-nums; min-width: 62px; }
+.res .d small { display: block; font-size: 12px; color: var(--ink2); }
+.res .i { font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.res .i b { color: var(--ink); font-size: 14px; }
+.res.wk .d { color: var(--accent); }
+select { font: inherit; font-size: 15px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+.formrow { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.formrow label { font-size: 14px; color: var(--ink2); }
 ul.tips li { line-height: 1.7; margin: 3px 0; }
 </style>
 </head>
@@ -184,7 +222,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
   </div>
 
   <div class="dialwrap">
-    <svg viewBox="-205 -205 410 410" aria-label="羅盤">
+    <svg viewBox="-232 -232 464 464" aria-label="羅盤">
       <g id="dial"></g>
       <g id="fixed"></g>
     </svg>
@@ -193,6 +231,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
   <div class="chips">
     <button class="chip" id="northBtn">磁北（傳統羅盤）</button>
     <button class="chip" id="starBtn">顯示流年飛星</button>
+    <button class="chip" id="shenBtn">吉神方位</button>
   </div>
   <div id="manual" class="card">
     <div class="muted">找不到方向感測器，目前是示範模式，拖曳下面的滑桿轉動羅盤。</div>
@@ -229,6 +268,15 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
     </ul>
   </div>
   <p class="muted">各派說法不同，這裡用的是最常見的「明財位」與「玄空飛星」流年財位，參考就好。</p>
+</section>
+
+<!-- ============ 農民曆 ============ -->
+<section class="page" id="p-almanac">
+  <div class="seg" id="almSeg" style="margin:4px 0 12px">
+    <button data-v="day" class="on">每日</button><button data-v="pick">擇日</button>
+  </div>
+  <div id="almDay"></div>
+  <div id="almPick" style="display:none"></div>
 </section>
 
 <!-- ============ 紀錄 ============ -->
@@ -278,6 +326,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
 <nav class="tabs">
   <button data-p="compass" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>羅盤</button>
   <button data-p="wealth"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>財位</button>
+  <button data-p="almanac"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>農民曆</button>
   <button data-p="records"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>紀錄</button>
   <button data-p="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg>說明</button>
 </nav>
@@ -288,6 +337,15 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
     <h3>簡約羅盤</h3>
     <p class="muted">把手機放平、遠離金屬，按下開始。使用時螢幕會保持常亮。</p>
     <div class="row"><button class="btn primary" id="startBtn">開始使用</button></div>
+  </div>
+</div>
+
+<!-- 說明彈窗 -->
+<div class="overlay" id="infoOv">
+  <div class="sheet">
+    <h3 id="infoTitle"></h3>
+    <div id="infoBody"></div>
+    <div class="row"><button class="btn" id="infoClose">關閉</button></div>
   </div>
 </div>
 
@@ -304,6 +362,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
   </div>
 </div>
 
+<script src="lunar.js"></script>
 <script>
 'use strict';
 // ================= 基本資料 =================
@@ -361,7 +420,7 @@ const FLY = flyingYear();
 
 // ================= 畫羅盤 =================
 const dial = $('dial');
-let starLayer;
+let starLayer, shenLayer;
 function drawDial() {
   const g = dial;
   g.innerHTML = '';
@@ -422,6 +481,9 @@ function drawDial() {
   });
   el('circle', { r: 64, fill: 'none', stroke: 'var(--line)', 'stroke-width': 1 }, g);
 
+  // 吉神方位（羅盤外圈，預設隱藏，由農民曆頁設定）
+  shenLayer = el('g', { visibility: 'hidden' }, g);
+
   // 天池：指北針
   el('circle', { r: 46, fill: 'var(--dial2)', stroke: 'var(--line)' }, g);
   el('path', { d: 'M0 -42 L7 0 L-7 0 Z', fill: 'var(--accent)' }, g);
@@ -441,6 +503,23 @@ function drawFixed() {
   lb('向', -56); lb('坐', 56);
 }
 drawDial(); drawFixed();
+
+// list: [{ t:'財', deg:0, color:'var(--gold)' }]，同方位的會往旁邊錯開
+function setShen(list) {
+  shenLayer.innerHTML = '';
+  const used = {};
+  list.forEach(s => {
+    const n = used[s.deg] = (used[s.deg] || 0) + 1;
+    const a = s.deg + (n - 1) * 9;
+    const grp = el('g', { transform: `rotate(${a}) translate(0,-219)` }, shenLayer);
+    el('circle', { r: 10, fill: s.color }, grp);
+    el('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 12, 'font-weight': 700, fill: '#fff' }, grp, s.t);
+  });
+}
+function showShen(on) {
+  shenLayer.setAttribute('visibility', on ? 'visible' : 'hidden');
+  $('shenBtn').classList.toggle('on', on);
+}
 
 // ================= 感測器 =================
 let sx = 0, sy = 0, haveReading = false;        // 平滑後的方向向量（磁北）
@@ -578,6 +657,7 @@ function frame() {
   dial.setAttribute('transform', `rotate(${-shown})`);
   render(h);
   renderPointers(h);
+  updateLive();
   renderLevel();
 }
 let lastTxt = '';
@@ -632,6 +712,7 @@ function setStars(on) {
   $('starBtn').classList.toggle('on', on);
 }
 $('starBtn').onclick = () => setStars(starLayer.getAttribute('visibility') === 'hidden');
+$('shenBtn').onclick = () => showShen(shenLayer.getAttribute('visibility') === 'hidden');
 $('showOnDial').onclick = () => { setStars(true); go('compass'); };
 
 // 分頁
@@ -639,6 +720,7 @@ function go(p) {
   document.querySelectorAll('.page').forEach(s => s.classList.toggle('on', s.id === 'p-' + p));
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
   if (p === 'records') renderRecords();
+  if (p === 'almanac' && window.almanacShow) almanacShow();
   scrollTo(0, 0);
 }
 document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => go(b.dataset.p));
@@ -654,6 +736,9 @@ $('saveBtn').onclick = () => {
   $('saveOv').classList.add('on');
 };
 document.querySelectorAll('#nameChips .chip').forEach(c => c.onclick = () => { $('saveName').value = c.textContent; });
+$('infoClose').onclick = () => $('infoOv').classList.remove('on');
+$('infoOv').onclick = e => { if (e.target === $('infoOv')) $('infoOv').classList.remove('on'); };
+function showInfo(title, html) { $('infoTitle').textContent = title; $('infoBody').innerHTML = html; $('infoOv').classList.add('on'); }
 $('saveCancel').onclick = () => $('saveOv').classList.remove('on');
 $('saveOk').onclick = () => {
   const h = lockedHeading, f = shanInfo(h), s = shanInfo(h + 180);
@@ -726,6 +811,20 @@ function renderPointers(h) {
   });
 }
 
+// 通用即時箭頭：元素帶 data-live-deg（地理方位角），裡面有 .arr 與 .livetxt
+function trueHeadingNow() { return locked ? lockedHeading : useTrue ? currentHeading() : norm(magHeading() + DECL); }
+function turnText(rel) { return rel < 20 || rel > 340 ? '就在你正前方' : rel < 180 ? `往右轉 ${Math.round(rel)}°` : `往左轉 ${Math.round(360 - rel)}°`; }
+function updateLive() {
+  const els = document.querySelectorAll('.page.on [data-live-deg]');
+  if (!els.length) return;
+  const th = trueHeadingNow();
+  els.forEach(e => {
+    const rel = norm(+e.dataset.liveDeg - th);
+    const a = e.querySelector('.arr'); if (a) a.setAttribute('transform', `rotate(${rel})`);
+    const t = e.querySelector('.livetxt'); if (t) t.textContent = turnText(rel);
+  });
+}
+
 // 明財位
 function drawRoom(v) {
   const s = $('room'); s.innerHTML = '';
@@ -751,5 +850,6 @@ drawRoom('C');
 requestAnimationFrame(frame);
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
+<script src="almanac.js"></script>
 </body>
 </html>
