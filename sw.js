@@ -1,6 +1,6 @@
 // 離線用：同源檔案走 network-first（有網路拿最新版，離線才用快取）
-const CACHE = 'luopan-v4';
-const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './lunar.js', './almanac.js'];
+const CACHE = 'luopan-v5';
+const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './lunar.js', './almanac.js', './sun.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

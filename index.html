@@ -191,6 +191,12 @@ ul.tips { padding-left: 20px; margin: 6px 0; }
 select { font: inherit; font-size: 15px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
 .formrow { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .formrow label { font-size: 14px; color: var(--ink2); }
+.rec { cursor: pointer; }
+.suntags { margin-top: 3px; }
+.suntbl { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.suntbl th, .suntbl td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--line2); }
+.suntbl th { color: var(--ink2); font-weight: 500; }
+.suntbl td:first-child { text-align: left; color: var(--ink2); }
 ul.tips li { line-height: 1.7; margin: 3px 0; }
 </style>
 </head>
@@ -232,6 +238,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
     <button class="chip" id="northBtn">磁北（傳統羅盤）</button>
     <button class="chip" id="starBtn">顯示流年飛星</button>
     <button class="chip" id="shenBtn">吉神方位</button>
+    <button class="chip" id="sunBtn">日照</button>
   </div>
   <div id="manual" class="card">
     <div class="muted">找不到方向感測器，目前是示範模式，拖曳下面的滑桿轉動羅盤。</div>
@@ -241,6 +248,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
     <button class="btn primary" id="lockBtn">鎖定讀數</button>
     <button class="btn" id="saveBtn" disabled>存紀錄</button>
   </div>
+  <div class="card" id="sunPanel" style="display:none;margin-top:12px"></div>
 </section>
 
 <!-- ============ 財位 ============ -->
@@ -283,7 +291,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
 <section class="page" id="p-records">
   <h2>量測紀錄</h2>
   <div class="card" id="recList"></div>
-  <p class="muted">紀錄只存在這支手機裡，不會上傳。建議同一個位置量 3 次，差不多才算數。</p>
+  <p class="muted">點一筆紀錄可以看日照分析。量窗戶時：面朝窗外、手機頂端朝外。紀錄只存在這支手機裡，不會上傳。</p>
 </section>
 
 <!-- ============ 說明 ============ -->
@@ -296,6 +304,16 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
       <li>數字穩定後按「鎖定讀數」，再按「存紀錄」。</li>
       <li>大門是鐵門的話，<b>離門 1～2 公尺</b>再量。</li>
       <li>門內、門外、窗邊各量一次，結果差不多才算數。</li>
+    </ul>
+  </div>
+
+  <h2>日照與窗戶</h2>
+  <div class="card">
+    <ul class="tips">
+      <li>羅盤頁打開「日照」：金色弧線是太陽一天的路徑，外圈低、內圈高；拖動滑桿看不同時間太陽在哪。</li>
+      <li>切「夏至」「冬至」比較：夏天太陽從東北升起、西北落下，冬天從東南升起、西南落下。</li>
+      <li>量窗戶：面朝窗外、手機頂端朝外，鎖定後存紀錄，紀錄頁會自動標出西曬、晨光、易潮等。</li>
+      <li>位置只用來算太陽，存在手機裡不會上傳；不想定位可以改選城市。</li>
     </ul>
   </div>
 
@@ -355,7 +373,7 @@ ul.tips li { line-height: 1.7; margin: 3px 0; }
     <h3>存紀錄</h3>
     <p class="muted" id="saveInfo"></p>
     <div class="chips" id="nameChips" style="justify-content:flex-start">
-      <button class="chip">自家大門</button><button class="chip">陽台</button><button class="chip">大窗</button><button class="chip">大樓大門</button>
+      <button class="chip">自家大門</button><button class="chip">大樓大門</button><button class="chip">陽台</button><button class="chip">客廳窗</button><button class="chip">主臥窗</button><button class="chip">次臥窗</button><button class="chip">廚房窗</button><button class="chip">書房窗</button>
     </div>
     <input id="saveName" placeholder="名稱，例如：自家大門" maxlength="20">
     <div class="row"><button class="btn" id="saveCancel">取消</button><button class="btn primary" id="saveOk">儲存</button></div>
@@ -768,8 +786,14 @@ function renderRecords() {
     const v = document.createElement('div'); v.className = 'v';
     v.textContent = `${r.zx}・${r.north}・${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     mid.append(n, v);
+    if (window.recSunTags) {
+      const tg = document.createElement('div'); tg.className = 'v suntags';
+      tg.textContent = recSunTags(r).map(x => x.i + ' ' + x.t.split('：')[0]).join('　');
+      mid.append(tg);
+      row.onclick = () => recSunDetail(r);
+    }
     const del = document.createElement('button'); del.textContent = '刪除';
-    del.onclick = () => { if (confirm(`刪除「${r.name}」？`)) { const a = loadRecs(); a.splice(i, 1); saveRecs(a); renderRecords(); } };
+    del.onclick = e => { e.stopPropagation(); if (confirm(`刪除「${r.name}」？`)) { const a = loadRecs(); a.splice(i, 1); saveRecs(a); renderRecords(); } };
     row.append(big, mid, del);
     box.appendChild(row);
   });
@@ -851,5 +875,6 @@ requestAnimationFrame(frame);
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
 <script src="almanac.js"></script>
+<script src="sun.js"></script>
 </body>
 </html>
