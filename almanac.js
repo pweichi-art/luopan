@@ -41,6 +41,12 @@ const PICK = [
   ['求醫','看醫生'], ['理髮','剪頭髮'], ['入學','入學拜師'], ['掃舍','大掃除'],
 ];
 
+// 整天「宜」實際會出現的活動，依常見程度排序（2016~2045 統計；只出現在時辰宜忌的不列）
+const DAY_YI = ["祭祀", "安葬", "嫁娶", "出行", "祈福", "動土", "安床", "納采", "開光", "入殮", "移徙", "破土", "入宅", "解除", "修造", "訂盟", "移柩", "開市", "拆卸", "立券", "交易", "求嗣", "啟鑽", "會親友", "除服", "成服", "上樑", "出火", "沐浴", "納畜", "栽種", "冠笄", "納財", "起基", "進人口", "裁衣", "齋醮", "牧養", "結網", "豎柱", "掃舍", "安門", "塑繪", "治病", "安香", "理髮", "捕捉", "安機械", "壞垣", "謝土", "作灶", "立碑", "破屋", "掛匾", "伐木", "塞穴", "造畜稠", "畋獵", "求醫", "蓋屋", "開池", "平治道塗", "修墳", "經絡", "放水", "合帳", "修飾垣牆", "補垣", "定磉", "掘井", "入學", "教牛馬", "作梁", "造倉", "造車器", "取漁", "開廁", "赴任", "整手足甲", "開生墳", "置產", "架馬", "開倉", "開柱眼", "造廟", "安碓磑", "合脊", "築堤", "合壽木", "雕刻", "造船", "出貨財", "普渡", "針灸", "習藝", "納婿", "斷蟻", "造橋", "開渠", "酬神", "問名", "割蜜", "歸岫", "分居", "修門", "歸寧", "僱傭"];
+const DAY_YI_SET = new Set(DAY_YI);
+const PICK_SET = new Set(PICK.map(p => p[0]));
+const MORE = DAY_YI.filter(k => !PICK_SET.has(k));
+
 const ZODIAC = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'];
 const MONTH = ['','正','二','三','四','五','六','七','八','九','十','十一','十二'];
 const WEEK = '日一二三四五六';
@@ -169,7 +175,10 @@ function renderDay() {
   $('shenOnDial').onclick = () => { showShen(true); go('compass'); };
   box.querySelectorAll('.term').forEach(b => b.onclick = () => {
     const t = b.dataset.term;
-    showInfo(t, `<p>${esc(TERM[t] || '傳統農民曆用語')}</p>`);
+    const canPick = DAY_YI_SET.has(t) && b.closest('.yj').querySelector('.k.yi');
+    showInfo(t, `<p>${esc(TERM[t] || '傳統農民曆用語')}</p>` +
+      (canPick ? `<div class="row"><button class="btn primary" id="termPick">找其他適合「${esc(t)}」的日子</button></div>` : ''));
+    if (canPick) $('termPick').onclick = () => { $('infoOv').classList.remove('on'); pickTerm(t); };
   });
   box.querySelectorAll('.hour').forEach(b => b.onclick = () => {
     const t = times[+b.dataset.h];
@@ -202,8 +211,14 @@ function renderPickForm() {
   box.innerHTML = `
     <div class="card">
       <p class="muted" style="margin-top:0">想做什麼事？</p>
-      <div class="terms" id="pkAct">${PICK.map(([k, v], i) =>
-        `<button class="chip ${i === 0 ? 'on' : ''}" data-k="${k}">${v === k ? k : `${v}`}</button>`).join('')}</div>
+      <div class="terms" id="pkAct">${PICK.map(([k, v]) => `<button class="chip pkc" data-k="${k}">${v}</button>`).join('')}</div>
+      <details id="pkMore" style="margin-top:10px">
+        <summary class="muted" style="cursor:pointer">更多項目（${MORE.length} 項）</summary>
+        <input id="pkSearch" placeholder="搜尋，例如：造車器、掘井、修墳" style="width:100%;margin-top:8px;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
+        <div id="pkMoreList" style="margin-top:6px;max-height:300px;overflow-y:auto">${MORE.map(k =>
+          `<button class="pkc pkrow" data-k="${k}"><b>${k}</b><span>${esc(TERM[k] || '')}</span></button>`).join('')}</div>
+      </details>
+      <div id="pkSel" style="margin-top:10px;font-size:14px"></div>
       <div class="formrow">
         <label for="pkRange">範圍</label>
         <select id="pkRange"><option value="30">未來 30 天</option><option value="60" selected>未來 60 天</option><option value="90">未來 90 天</option><option value="180">未來 180 天</option></select>
@@ -221,14 +236,36 @@ function renderPickForm() {
     <h2 id="pkTitle" style="display:none"></h2>
     <div class="card" id="pkRes" style="display:none"></div>
     <p class="muted">條件：當天「宜」有這件事、且「忌」沒有。屬相建議填家中主事者（例如搬家填屋主）的生肖。</p>`;
-  box.querySelectorAll('#pkAct .chip').forEach(c => c.onclick = () => {
-    box.querySelectorAll('#pkAct .chip').forEach(x => x.classList.toggle('on', x === c));
-  });
+  box.querySelectorAll('.pkc').forEach(c => c.onclick = () => selectAct(c.dataset.k));
+  $('pkSearch').oninput = e => {
+    const q = e.target.value.trim();
+    box.querySelectorAll('.pkrow').forEach(r => {
+      r.style.display = !q || r.dataset.k.includes(q) || (TERM[r.dataset.k] || '').includes(q) ? '' : 'none';
+    });
+  };
   $('pkGo').onclick = runPick;
+  selectAct(pickAct);
+}
+let pickAct = PICK[0][0];
+const actLabel = k => { const p = PICK.find(x => x[0] === k); return p ? p[1] : k; };
+function selectAct(k) {
+  pickAct = k;
+  const box = $('almPick');
+  box.querySelectorAll('.pkc').forEach(c => c.classList.toggle('on', c.dataset.k === k));
+  if (!PICK_SET.has(k)) box.querySelector('#pkMore').open = true;
+  $('pkSel').innerHTML = `已選：<b>${esc(k)}</b>${TERM[k] ? `　<span class="muted">${esc(TERM[k])}</span>` : ''}`;
+}
+// 從每日頁的「宜」直接跳來找日子
+function pickTerm(k) {
+  if (!almInit) { almInit = true; renderPickForm(); }
+  showSeg('pick');
+  selectAct(k);
+  $('pkMore').open = false;          // 收合長清單，結果才不會被擠到很下面
+  runPick();
 }
 function runPick() {
-  const act = $('almPick').querySelector('#pkAct .chip.on').dataset.k;
-  const label = PICK.find(p => p[0] === act)[1];
+  const act = pickAct;
+  const label = actLabel(act);
   const days = +$('pkRange').value, zod = $('pkZod').value, onlyHd = $('pkHd').checked, onlyWk = $('pkWk').checked;
   const res = [];
   const start = today0();
@@ -248,7 +285,7 @@ function runPick() {
   $('pkTitle').textContent = `適合「${label}」的日子：${res.length} 天`;
   const box = $('pkRes');
   box.style.display = '';
-  if (!res.length) { box.innerHTML = '<p class="muted">這段期間沒有符合的日子，試試放寬範圍或條件。</p>'; return; }
+  if (!res.length) { box.innerHTML = '<p class="muted">這段期間沒有符合的日子，試試放寬範圍或條件。</p>'; $('pkTitle').scrollIntoView({ block: 'start' }); return; }
   box.innerHTML = res.map((r, i) => {
     const wk = r.d.getDay() === 0 || r.d.getDay() === 6;
     return `<button class="res ${wk ? 'wk' : ''}" data-i="${i}">
@@ -259,6 +296,7 @@ function runPick() {
   box.querySelectorAll('.res').forEach(b => b.onclick = () => {
     showSeg('day'); setDate(res[+b.dataset.i].d); scrollTo(0, 0);
   });
+  $('pkTitle').scrollIntoView({ block: 'start' });
 }
 
 // ---------- 切換 ----------

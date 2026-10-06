@@ -192,6 +192,10 @@ select { font: inherit; font-size: 15px; padding: 9px 10px; border-radius: 12px;
 .formrow { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .formrow label { font-size: 14px; color: var(--ink2); }
 .rec { cursor: pointer; }
+.pkrow { display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line2); padding: 9px 4px; color: var(--ink); font-size: 15px; }
+.pkrow span { color: var(--ink2); font-size: 13px; }
+.pkrow.on { background: var(--ink); color: var(--bg); border-radius: 8px; }
+.pkrow.on span { color: var(--bg); opacity: .8; }
 .suntags { margin-top: 3px; }
 .suntbl { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
 .suntbl th, .suntbl td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--line2); }
