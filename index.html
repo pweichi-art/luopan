@@ -876,7 +876,7 @@ document.querySelectorAll('#doorSeg button').forEach(b => b.onclick = () => {
 drawRoom('C');
 
 requestAnimationFrame(frame);
-if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {}));
 </script>
 <script src="almanac.js"></script>
 <script src="sun.js"></script>
